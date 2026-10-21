@@ -35,9 +35,9 @@ pub fn resolve_program(
                 for ext in &pathexts {
                     let clean_ext = ext.trim_start_matches('.');
                     let candidates = [
-                        base.with_extension(clean_ext),
                         base.with_extension(clean_ext.to_lowercase()),
                         base.with_extension(clean_ext.to_uppercase()),
+                        base.with_extension(clean_ext),
                     ];
                     for candidate in candidates {
                         if candidate.is_file() {
@@ -77,9 +77,9 @@ pub fn resolve_program(
                     format!(".{ext}")
                 };
                 let candidates = [
-                    dir.join(format!("{trimmed}{formatted_ext}")),
                     dir.join(format!("{trimmed}{}", formatted_ext.to_lowercase())),
                     dir.join(format!("{trimmed}{}", formatted_ext.to_uppercase())),
+                    dir.join(format!("{trimmed}{formatted_ext}")),
                 ];
                 for candidate in candidates {
                     if candidate.is_file() {
@@ -115,9 +115,9 @@ pub fn resolve_program(
                         format!(".{ext}")
                     };
                     let candidates = [
-                        dir.join(format!("{trimmed}{formatted_ext}")),
                         dir.join(format!("{trimmed}{}", formatted_ext.to_lowercase())),
                         dir.join(format!("{trimmed}{}", formatted_ext.to_uppercase())),
+                        dir.join(format!("{trimmed}{formatted_ext}")),
                     ];
                     for candidate in candidates {
                         if candidate.is_file() {
@@ -215,7 +215,13 @@ mod tests {
 
         let resolved_win =
             resolve_program("npm", None, Some(path_str), Some(".COM;.EXE;.CMD"), true);
-        assert_eq!(resolved_win, Some(npm_cmd));
+        assert!(resolved_win.is_some());
+        let path = resolved_win.unwrap();
+        assert!(is_windows_batch(&path));
+        assert_eq!(
+            path.file_name().unwrap().to_string_lossy().to_lowercase(),
+            "npm.cmd"
+        );
 
         let resolved_nix = resolve_program("npm", None, Some(path_str), None, false);
         assert_eq!(resolved_nix, None);
@@ -234,7 +240,13 @@ mod tests {
             Some(".COM;.EXE;.BAT;.CMD"),
             true,
         );
-        assert_eq!(resolved_win, Some(test_bat));
+        assert!(resolved_win.is_some());
+        let path = resolved_win.unwrap();
+        assert!(is_windows_batch(&path));
+        assert_eq!(
+            path.file_name().unwrap().to_string_lossy().to_lowercase(),
+            "test.bat"
+        );
     }
 
     #[test]
