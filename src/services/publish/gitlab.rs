@@ -234,6 +234,19 @@ mod tests {
 
     use super::*;
 
+    fn send_mock_response(stream: &mut std::net::TcpStream, status: &str, body: &str) {
+        let resp = format!(
+            "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        let _ = stream.write_all(resp.as_bytes());
+        let _ = stream.flush();
+        let _ = stream.shutdown(std::net::Shutdown::Write);
+        let _ = stream.set_read_timeout(Some(std::time::Duration::from_millis(100)));
+        let mut drain = [0; 512];
+        let _ = stream.read(&mut drain);
+    }
+
     #[test]
     fn gitlab_release_create_flow() {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -245,8 +258,11 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buf = [0; 2048];
                 let _ = stream.read(&mut buf);
-                let resp = "HTTP/1.1 404 Not Found\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"message\":\"404 Release Not Found\"}";
-                let _ = stream.write_all(resp.as_bytes());
+                send_mock_response(
+                    &mut stream,
+                    "404 Not Found",
+                    r#"{"message":"404 Release Not Found"}"#,
+                );
             }
 
             // Second call: POST create (returns 201)
@@ -254,8 +270,11 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buf = [0; 2048];
                 let _ = stream.read(&mut buf);
-                let resp = "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"tag_name\":\"v1.0.0\",\"_links\":{\"self\":\"https://gitlab.com/group/repo/-/releases/v1.0.0\"}}";
-                let _ = stream.write_all(resp.as_bytes());
+                send_mock_response(
+                    &mut stream,
+                    "201 Created",
+                    r#"{"tag_name":"v1.0.0","_links":{"self":"https://gitlab.com/group/repo/-/releases/v1.0.0"}}"#,
+                );
             }
         });
 
@@ -284,8 +303,11 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buf = [0; 2048];
                 let _ = stream.read(&mut buf);
-                let resp = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"tag_name\":\"v2.0.0\",\"_links\":{\"self\":\"https://gitlab.com/group/repo/-/releases/v2.0.0\"}}";
-                let _ = stream.write_all(resp.as_bytes());
+                send_mock_response(
+                    &mut stream,
+                    "200 OK",
+                    r#"{"tag_name":"v2.0.0","_links":{"self":"https://gitlab.com/group/repo/-/releases/v2.0.0"}}"#,
+                );
             }
 
             // Second call: PUT update (returns 200 OK)
@@ -293,8 +315,11 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buf = [0; 2048];
                 let _ = stream.read(&mut buf);
-                let resp = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"tag_name\":\"v2.0.0\",\"_links\":{\"self\":\"https://gitlab.com/group/repo/-/releases/v2.0.0\"}}";
-                let _ = stream.write_all(resp.as_bytes());
+                send_mock_response(
+                    &mut stream,
+                    "200 OK",
+                    r#"{"tag_name":"v2.0.0","_links":{"self":"https://gitlab.com/group/repo/-/releases/v2.0.0"}}"#,
+                );
             }
         });
 

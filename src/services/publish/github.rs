@@ -233,6 +233,19 @@ mod tests {
 
     use super::*;
 
+    fn send_mock_response(stream: &mut std::net::TcpStream, status: &str, body: &str) {
+        let resp = format!(
+            "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        let _ = stream.write_all(resp.as_bytes());
+        let _ = stream.flush();
+        let _ = stream.shutdown(std::net::Shutdown::Write);
+        let _ = stream.set_read_timeout(Some(std::time::Duration::from_millis(100)));
+        let mut drain = [0; 512];
+        let _ = stream.read(&mut drain);
+    }
+
     #[test]
     fn github_release_create_flow() {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -244,8 +257,7 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buf = [0; 2048];
                 let _ = stream.read(&mut buf);
-                let resp = "HTTP/1.1 404 Not Found\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"message\":\"Not Found\"}";
-                let _ = stream.write_all(resp.as_bytes());
+                send_mock_response(&mut stream, "404 Not Found", r#"{"message":"Not Found"}"#);
             }
 
             // Second call: POST create (returns 201 Created)
@@ -253,8 +265,11 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buf = [0; 2048];
                 let _ = stream.read(&mut buf);
-                let resp = "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"id\":101,\"html_url\":\"https://github.com/org/repo/releases/tag/v1.0.0\"}";
-                let _ = stream.write_all(resp.as_bytes());
+                send_mock_response(
+                    &mut stream,
+                    "201 Created",
+                    r#"{"id":101,"html_url":"https://github.com/org/repo/releases/tag/v1.0.0"}"#,
+                );
             }
         });
 
@@ -284,8 +299,11 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buf = [0; 2048];
                 let _ = stream.read(&mut buf);
-                let resp = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"id\":202,\"html_url\":\"https://github.com/org/repo/releases/tag/v2.0.0\"}";
-                let _ = stream.write_all(resp.as_bytes());
+                send_mock_response(
+                    &mut stream,
+                    "200 OK",
+                    r#"{"id":202,"html_url":"https://github.com/org/repo/releases/tag/v2.0.0"}"#,
+                );
             }
 
             // Second call: PATCH update (returns 200 OK)
@@ -293,8 +311,11 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buf = [0; 2048];
                 let _ = stream.read(&mut buf);
-                let resp = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"id\":202,\"html_url\":\"https://github.com/org/repo/releases/tag/v2.0.0\"}";
-                let _ = stream.write_all(resp.as_bytes());
+                send_mock_response(
+                    &mut stream,
+                    "200 OK",
+                    r#"{"id":202,"html_url":"https://github.com/org/repo/releases/tag/v2.0.0"}"#,
+                );
             }
         });
 
@@ -329,8 +350,11 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buf = [0; 1024];
                 let _ = stream.read(&mut buf);
-                let resp = "HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"message\":\"Bad credentials\"}";
-                let _ = stream.write_all(resp.as_bytes());
+                send_mock_response(
+                    &mut stream,
+                    "401 Unauthorized",
+                    r#"{"message":"Bad credentials"}"#,
+                );
             }
         });
 

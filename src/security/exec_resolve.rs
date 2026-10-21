@@ -169,13 +169,34 @@ pub fn contains_batch_metachars(arg: &str) -> bool {
 }
 
 fn split_path_entries(raw_path: &str, is_windows: bool) -> Vec<PathBuf> {
-    let sep = if is_windows { ';' } else { ':' };
-    raw_path
-        .split(sep)
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-        .map(PathBuf::from)
-        .collect()
+    if is_windows {
+        raw_path
+            .split(';')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .map(PathBuf::from)
+            .collect()
+    } else {
+        let mut entries = Vec::new();
+        let parts: Vec<&str> = raw_path.split(':').collect();
+        let mut i = 0;
+        while i < parts.len() {
+            let part = parts[i].trim();
+            if part.len() == 1
+                && part.chars().next().is_some_and(|c| c.is_ascii_alphabetic())
+                && i + 1 < parts.len()
+            {
+                entries.push(PathBuf::from(format!("{part}:{}", parts[i + 1])));
+                i += 2;
+            } else if !part.is_empty() {
+                entries.push(PathBuf::from(part));
+                i += 1;
+            } else {
+                i += 1;
+            }
+        }
+        entries
+    }
 }
 
 fn parse_pathext(pathext_var: Option<&str>) -> Vec<String> {
