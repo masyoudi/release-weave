@@ -2,6 +2,8 @@
 name = "release-weave"
 version = "0.1.0"
 edition = "2024"
+description = "Native desktop toolkit in Rust and GPUI for modern software release engineering"
+license = "Apache-2.0"
 repository = "https://github.com/masyoudi/release-weave"
 homepage = "https://github.com/masyoudi/release-weave"
 

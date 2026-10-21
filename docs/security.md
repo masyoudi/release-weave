@@ -4,13 +4,15 @@ ReleaseWeave is designed following the **Defense-in-Depth** principle to ensure 
 
 ---
 
-## 1. Path Traversal Prevention
+## 1. Path Traversal & Remote URL Validation
 
 The `validate_dir` and `validate_output_file` functions in `src/security/path_validation.rs` validate all filesystem paths before read or write operations:
 - Blocks directory traversal sequences such as `../../../../etc/passwd`.
 - Verifies that target directories exist and are genuine directories rather than files.
 - Ensures output files reside within valid, writable directories.
 - Rejects writes if the destination path points to an existing directory.
+
+In addition, remote service integrations (`src/services/remote_service.rs`) validate repository owner and repository name segments before constructing publishing endpoints. Paths containing directory traversal tokens (`..`, `/`, `\`) or invalid characters are rejected before making network requests.
 
 ---
 
@@ -20,8 +22,8 @@ The `CommandSpec::validate` function in `src/security/command_policy.rs` and the
 - **Banning Shell Interpreters:** Execution of shell interpreters such as `sh`, `bash`, `zsh`, `cmd`, `cmd.exe`, `powershell`, and `pwsh` is rejected unconditionally.
 - **Banning Inline Evaluation Flags:** Arguments such as `-c`, `/c`, `/C`, and `-Command` are rejected.
 - **Strict Separation of Program and Arguments:** Command arguments must be provided as a structured `Vec<String>` spawned directly via `std::process::Command`, preventing shell argument injection and string interpolation.
-- **Safe Windows Batch Handling:** On Windows, executables are resolved through `PATH` and `PATHEXT`. If a `.bat` or `.cmd` file is resolved, arguments containing `cmd.exe` metacharacters (`& | < > ^ % "`) are rejected.
-- **Execution Timeouts:** All commands run with an enforced timeout (30 to 60 seconds) to terminate hung or zombie processes.
+- **Safe Windows Batch Handling:** On Windows, executables are resolved through both `PATH` and the target working directory (`cwd`). If a `.bat` or `.cmd` file is resolved, arguments containing `cmd.exe` metacharacters (`& | < > ^ % "`) are rejected.
+- **Execution Timeouts & Process Reaping:** All commands run with an enforced timeout (30 to 60 seconds). If a timeout occurs, the child process is terminated immediately with `child.kill()` and reaped with `child.wait()` to eliminate orphan or zombie processes.
 
 ---
 
@@ -61,5 +63,5 @@ The `src/ai/prompts.rs` module defends local AI models against prompt injection 
 
 - **Zero Automatic Remote Pushes:** ReleaseWeave never runs `git push` to any remote repository.
 - **Opt-In Tag Creation:** Annotated Git tag generation is disabled by default (`allow_git_tag = false`). Tags can only be created if explicitly enabled per project in Settings and the release has been finalized.
-- **Pre-Tag Verification:** Tagging is rejected if the working tree has uncommitted modifications, the tag already exists, or HEAD is in a detached state.
+- **Pre-Tag Verification:** Tagging is rejected if the working tree has uncommitted modifications, the tag already exists, HEAD is in a detached state, or the tag name begins with a hyphen `-` (preventing CLI option injection in git tools).
 - **Verified File Modification:** File patches (`Cargo.toml`, `package.json`, `pyproject.toml`, `CHANGELOG.md`) require visual diff confirmation and SHA-256 hash pre-validation prior to atomic disk writes.

@@ -49,7 +49,7 @@ cargo clippy --all-targets -- -D warnings
 
 ## 3. Pull Request Workflow
 
-1. Create a descriptive feature branch from `main`: `feat/feature-name` or `fix/issue-name`.
+1. Create a descriptive feature branch from `master`: `feat/feature-name` or `fix/issue-name`.
 2. Follow Conventional Commits conventions (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`).
 3. Ensure all tests pass (`cargo test`) with zero Clippy warnings (`-D warnings`).
 4. Submit a Pull Request with a clear, concise summary of your changes.

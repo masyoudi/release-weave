@@ -8,7 +8,7 @@ ReleaseWeave integrates with local AI providers (Ollama) to synthesize verifiabl
 
 > [!IMPORTANT]
 > **Licensing Separation:**
-> - The **ReleaseWeave** application codebase is licensed under the **Apache License 2.0** (see [LICENSE](LICENSE)).
+> - The **ReleaseWeave** application codebase is licensed under the **Apache License 2.0** (see [LICENSE](../LICENSE)).
 > - AI models downloaded and executed locally through Ollama are governed by **distinct licenses and terms** issued by their respective creators and organizations. ReleaseWeave does not distribute model weights within this repository.
 
 Summary of recommended local models:
