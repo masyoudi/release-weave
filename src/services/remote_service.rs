@@ -209,7 +209,10 @@ mod tests {
 
     #[test]
     fn rejects_path_traversal_in_remote_urls() {
-        assert!(RemoteService::parse_remote_url("https://github.com/attacker/../../api/repo.git").is_err());
+        assert!(
+            RemoteService::parse_remote_url("https://github.com/attacker/../../api/repo.git")
+                .is_err()
+        );
         assert!(RemoteService::parse_remote_url("git@github.com:evil/../admin/pwned.git").is_err());
         assert!(RemoteService::parse_remote_url("https://github.com/org/sub/./repo.git").is_err());
     }

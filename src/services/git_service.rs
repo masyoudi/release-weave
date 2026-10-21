@@ -830,14 +830,16 @@ mod tests {
         let err = GitService::create_annotated_tag(&repo, "-f", "Option injection").unwrap_err();
         assert!(err.to_string().contains("cannot start with a hyphen"));
 
-        let err2 = GitService::create_annotated_tag(&repo, "--force", "Option injection").unwrap_err();
+        let err2 =
+            GitService::create_annotated_tag(&repo, "--force", "Option injection").unwrap_err();
         assert!(err2.to_string().contains("cannot start with a hyphen"));
     }
 
     #[test]
     fn create_annotated_tag_rejects_invalid_ref_name() {
         let (_dir, repo) = create_test_repo();
-        let err = GitService::create_annotated_tag(&repo, "bad tag with spaces", "Invalid").unwrap_err();
+        let err =
+            GitService::create_annotated_tag(&repo, "bad tag with spaces", "Invalid").unwrap_err();
         assert!(err.to_string().contains("Invalid Git tag reference name"));
     }
 
