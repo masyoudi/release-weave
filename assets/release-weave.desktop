@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=ReleaseWeave
+GenericName=Release Orchestrator
+Comment=Autonomous Release Orchestrator & Studio
+Exec=release-weave %F
+Icon=release-weave
+Terminal=false
+Type=Application
+Categories=Development;RevisionControl;Building;
+StartupWMClass=release-weave
+Keywords=git;release;changelog;semver;version;

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.release_weave.ReleaseWeave</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <name>ReleaseWeave</name>
+  <summary>Autonomous Release Orchestrator and Studio</summary>
+  <description>
+    <p>
+      ReleaseWeave is a native desktop release orchestrator and studio engineered with Rust and GPUI.
+      It automates Git change categorization, SemVer recommendation, interactive changelog generation,
+      and multi-framework release readiness verification.
+    </p>
+  </description>
+  <launchable type="desktop-id">release-weave.desktop</launchable>
+  <provides>
+    <binary>release-weave</binary>
+  </provides>
+  <url type="homepage">https://github.com/masyoudi/release-weave</url>
+  <url type="bugtracker">https://github.com/masyoudi/release-weave/issues</url>
+  <url type="vcs-browser">https://github.com/masyoudi/release-weave</url>
+  <developer id="com.release_weave">
+    <name>ReleaseWeave Contributors</name>
+  </developer>
+  <categories>
+    <category>Development</category>
+    <category>RevisionControl</category>
+    <category>Building</category>
+  </categories>
+  <content_rating type="oars-1.1" />
+</component>
