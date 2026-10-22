@@ -149,6 +149,19 @@ mod tests {
 
     use super::*;
 
+    fn send_mock_response(stream: &mut std::net::TcpStream, status: &str, body: &str) {
+        let resp = format!(
+            "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        let _ = stream.write_all(resp.as_bytes());
+        let _ = stream.flush();
+        let _ = stream.shutdown(std::net::Shutdown::Write);
+        let _ = stream.set_read_timeout(Some(std::time::Duration::from_millis(100)));
+        let mut drain = [0; 512];
+        let _ = stream.read(&mut drain);
+    }
+
     #[test]
     fn ollama_success_flow() {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -157,16 +170,11 @@ mod tests {
         thread::spawn(move || {
             for stream in listener.incoming().take(2) {
                 let mut stream = stream.unwrap();
-                let mut buffer = [0; 1024];
+                let mut buffer = [0; 2048];
                 let _ = stream.read(&mut buffer);
 
                 let body = r#"{"message":{"content":"{\"items\":[]}"},"models":[{"name":"qwen2.5-coder:7b"}]}"#;
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                    body.len()
-                );
-                let _ = stream.write_all(response.as_bytes());
-                let _ = stream.flush();
+                send_mock_response(&mut stream, "200 OK", body);
             }
         });
 
@@ -187,11 +195,14 @@ mod tests {
         thread::spawn(move || {
             if let Some(stream) = listener.incoming().next() {
                 let mut stream = stream.unwrap();
-                let mut buffer = [0; 512];
+                let mut buffer = [0; 2048];
                 let _ = stream.read(&mut buffer);
 
-                let response = "HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n{\"error\":\"model not found\"}";
-                let _ = stream.write_all(response.as_bytes());
+                send_mock_response(
+                    &mut stream,
+                    "500 Internal Server Error",
+                    r#"{"error":"model not found"}"#,
+                );
             }
         });
 
