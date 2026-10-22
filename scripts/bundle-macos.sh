@@ -22,6 +22,9 @@ mkdir -p "$APP_BUNDLE/Contents/Resources"
 # 1. Install binary
 cp "$BINARY" "$APP_BUNDLE/Contents/MacOS/release-weave"
 chmod +x "$APP_BUNDLE/Contents/MacOS/release-weave"
+if command -v strip >/dev/null 2>&1; then
+    strip -S "$APP_BUNDLE/Contents/MacOS/release-weave" 2>/dev/null || true
+fi
 
 # 2. Install icon
 if [ -f "$REPO_ROOT/assets/icons/release-weave.icns" ]; then
@@ -48,13 +51,25 @@ if command -v hdiutil >/dev/null 2>&1; then
     cp -R "$APP_BUNDLE" "$DMG_STAGE/"
     ln -s /Applications "$DMG_STAGE/Applications"
     
+    STAGE_SIZE_KB="$(du -sk "$DMG_STAGE" | cut -f1)"
+    # Add generous headroom (minimum 150MB buffer) to avoid "No space left on device"
+    DMG_SIZE_MB=$(( (STAGE_SIZE_KB / 1024) + 150 ))
+
+    TEMP_DMG="$OUTPUT_DIR/ReleaseWeave-temp.dmg"
     DMG_OUTPUT="$OUTPUT_DIR/ReleaseWeave-macos-universal.dmg"
-    rm -f "$DMG_OUTPUT"
-    hdiutil create -volname "ReleaseWeave" \
+    rm -f "$TEMP_DMG" "$DMG_OUTPUT"
+
+    echo "==> Creating temporary DMG volume (${DMG_SIZE_MB}MB)..."
+    hdiutil create -size "${DMG_SIZE_MB}m" \
+        -volname "ReleaseWeave" \
+        -fs HFS+ \
         -srcfolder "$DMG_STAGE" \
-        -ov -format UDZO \
-        "$DMG_OUTPUT"
-    
+        -format UDRW \
+        "$TEMP_DMG"
+
+    echo "==> Compressing DMG to final UDZO format..."
+    hdiutil convert "$TEMP_DMG" -format UDZO -ov -o "$DMG_OUTPUT"
+    rm -f "$TEMP_DMG"
     rm -rf "$DMG_STAGE"
     echo "==> DMG created at: $DMG_OUTPUT"
 else

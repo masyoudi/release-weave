@@ -1,14 +1,64 @@
-use gpui_kit::assets::AllAssets;
+use std::borrow::Cow;
+
+use gpui_kit::assets::{Assets, icon_assets};
 use gpui_kit::prelude::*;
-use gpui_kit::{App, Bounds, Point, TitlebarOptions, WindowBounds, WindowOptions, px, size};
+use gpui_kit::{
+    App, AssetSource, Bounds, Point, Result, SharedString, TitlebarOptions, WindowBounds,
+    WindowOptions, px, size,
+};
 
 use release_weave::paths;
 use release_weave::ui::shell::ShellView;
 use release_weave::ui::state::AppState;
 
+icon_assets!(
+    ExtraIcons,
+    [
+        Archive,
+        Boxes,
+        Bug,
+        CheckCheck,
+        Code,
+        Download,
+        FolderGit2,
+        GitCommitHorizontal,
+        Lock,
+        LockOpen,
+        Package,
+        Plug,
+        SaveCheck,
+        ShieldCheck,
+        Sparkles,
+        SquareCheck,
+        Tag,
+        Trash,
+        Upload,
+        X,
+    ]
+);
+
+struct AppAssets;
+
+impl AssetSource for AppAssets {
+    fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
+        if let Some(bytes) = ExtraIcons.load(path)? {
+            return Ok(Some(bytes));
+        }
+        Assets.load(path)
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<SharedString>> {
+        let mut paths = Assets.list(path)?;
+        paths.extend(ExtraIcons.list(path)?);
+        paths.sort();
+        paths.dedup();
+        Ok(paths)
+    }
+}
+
 pub fn run() {
     gpui_kit::application()
-        .with_assets(AllAssets)
+        .with_assets(AppAssets)
         .run(|cx: &mut App| {
             gpui_kit::init(cx);
             release_weave::ui::theme::install_theme(cx);

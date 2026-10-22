@@ -48,7 +48,8 @@ jobs:
       - name: Package Linux tarball
         run: |
           mkdir -p dist
-          tar -czvf dist/release-weave-linux-x86_64.tar.gz -C target/release release-weave
+          GZIP=-9 tar -czvf dist/release-weave-linux-x86_64.tar.gz -C target/release release-weave
+          tar -cJvf dist/release-weave-linux-x86_64.tar.xz -C target/release release-weave
 
       - name: Package Linux AppImage
         run: |
@@ -118,7 +119,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist
-          Compress-Archive -Path target/x86_64-pc-windows-msvc/release/release-weave.exe -DestinationPath dist/release-weave-windows-x86_64.zip
+          Compress-Archive -Path target/x86_64-pc-windows-msvc/release/release-weave.exe -DestinationPath dist/release-weave-windows-x86_64.zip -CompressionLevel Optimal
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4

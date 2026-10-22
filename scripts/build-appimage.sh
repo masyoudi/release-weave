@@ -38,6 +38,9 @@ mkdir -p "$APPDIR/usr/share/metainfo"
 # Install binary
 cp "$BINARY" "$APPDIR/usr/bin/release-weave"
 chmod +x "$APPDIR/usr/bin/release-weave"
+if command -v strip >/dev/null 2>&1; then
+    strip -s "$APPDIR/usr/bin/release-weave" 2>/dev/null || true
+fi
 
 # Install desktop entry
 cp "$REPO_ROOT/assets/release-weave.desktop" "$APPDIR/usr/share/applications/release-weave.desktop"
@@ -84,9 +87,9 @@ else
     APPIMAGETOOL="$REPO_ROOT/target/tools/squashfs-root/AppRun"
 fi
 
-echo "==> Packaging AppImage with $APPIMAGETOOL..."
+echo "==> Packaging AppImage with $APPIMAGETOOL (XZ compression)..."
 rm -f "$OUTPUT_IMAGE"
-ARCH=x86_64 "$APPIMAGETOOL" -n "$APPDIR" "$OUTPUT_IMAGE"
+ARCH=x86_64 "$APPIMAGETOOL" --comp xz -n "$APPDIR" "$OUTPUT_IMAGE"
 
 echo "==> AppImage created successfully:"
 ls -lh "$OUTPUT_IMAGE"
