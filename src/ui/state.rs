@@ -627,6 +627,15 @@ impl AppState {
             return;
         };
 
+        if project.id.is_none() || Some(release.project_id) != project.id {
+            self.active_release = None;
+            self.set_error(Some(
+                "Active release does not belong to the selected project".to_string(),
+            ));
+            cx.notify();
+            return;
+        }
+
         if release.status != crate::domain::release::ReleaseStatus::Final {
             self.set_error(Some(
                 "Release must be finalized before publishing".to_string(),
@@ -703,7 +712,7 @@ impl AppState {
         );
     }
 
-    pub fn select_project(&mut self, project: Project, cx: &mut Context<Self>) {
+    pub fn select_project_sync(&mut self, project: Project) {
         self.active_project = Some(project.clone());
         self.show_project_switcher = false;
         self.show_open_repo_dialog = false;
@@ -713,21 +722,27 @@ impl AppState {
         self.show_command_palette = false;
         self.show_package_selector = false;
         self.pending_file_plan = None;
+        self.selected_plan_patch_idx = 0;
         self.commits.clear();
         self.commit_range = None;
         self.change_items.clear();
         self.readiness_checks.clear();
         self.readiness_summary = None;
         self.release_notes.clear();
+        self.active_release = None;
+        self.context_report = None;
         self.bump_recommendation = None;
         self.version_consistency = None;
         self.current_version = None;
+        self.target_version.clear();
+        self.selected_category_filter = None;
         self.selected_commit_hash = None;
         self.diff_preview = None;
         self.diff_truncated = false;
         self.history_releases.clear();
         self.packages.clear();
         self.active_package_id = None;
+        self.detected_stack = None;
 
         let repo_path = project.repository_path.clone();
 
@@ -825,6 +840,10 @@ impl AppState {
                 }
             }
         }
+    }
+
+    pub fn select_project(&mut self, project: Project, cx: &mut Context<Self>) {
+        self.select_project_sync(project);
         cx.notify();
     }
 
@@ -990,6 +1009,17 @@ impl AppState {
             Ok(was_active) => {
                 if self.projects.is_empty() {
                     self.active_project = None;
+                    self.active_release = None;
+                    self.context_report = None;
+                    self.version_consistency = None;
+                    self.detected_stack = None;
+                    self.history_releases.clear();
+                    self.packages.clear();
+                    self.active_package_id = None;
+                    self.selected_commit_hash = None;
+                    self.diff_preview = None;
+                    self.diff_truncated = false;
+                    self.selected_category_filter = None;
                     self.show_project_switcher = false;
                     self.commits.clear();
                     self.commit_range = None;
@@ -1256,5 +1286,42 @@ mod tests {
         assert_eq!(state.packages.len(), 1);
         assert_eq!(state.active_package_id, Some(10));
         assert!(state.show_package_selector);
+    }
+
+    #[test]
+    fn project_switch_clears_active_release_and_prevents_cross_project_leak() {
+        let dir = tempdir().unwrap();
+        let db_file = dir.path().join("rw.db");
+        let mut state = AppState::new(db_file);
+
+        let p1 = Project::new("ProjOne", "/tmp/p1", "main");
+        let mut p1_saved = p1;
+        p1_saved.id = Some(1);
+
+        let p2 = Project::new("ProjTwo", "/tmp/p2", "main");
+        let mut p2_saved = p2;
+        p2_saved.id = Some(2);
+
+        state.active_project = Some(p1_saved);
+        let mut rel = Release::new_draft(1, "1.0.0", None, None, "end");
+        rel.id = Some(101);
+        rel.status = crate::domain::release::ReleaseStatus::Final;
+        rel.release_notes = "ProjOne finalized release notes".to_string();
+
+        state.active_release = Some(rel);
+        state.release_notes = "ProjOne finalized release notes".to_string();
+        state.target_version = "1.0.0".to_string();
+
+        assert!(state.active_release.is_some());
+        assert_eq!(state.release_notes, "ProjOne finalized release notes");
+
+        // Switch project to ProjTwo
+        state.select_project_sync(p2_saved);
+
+        // Verification: active release must be cleared, notes cleared, target version reset
+        assert_eq!(state.active_project.as_ref().unwrap().name, "ProjTwo");
+        assert!(state.active_release.is_none());
+        assert!(state.release_notes.is_empty());
+        assert_ne!(state.target_version, "1.0.0");
     }
 }

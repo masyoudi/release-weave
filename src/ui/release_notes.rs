@@ -92,7 +92,10 @@ impl RenderOnce for ReleaseNotesView {
         let is_release_final = app_state
             .active_release
             .as_ref()
-            .map(|r| r.status == crate::domain::release::ReleaseStatus::Final)
+            .map(|r| {
+                Some(r.project_id) == project.id
+                    && r.status == crate::domain::release::ReleaseStatus::Final
+            })
             .unwrap_or(false);
         let allow_git_tag = app_state.effective_settings().allow_git_tag;
 
