@@ -1,0 +1,8 @@
+# Fast linker configuration for Linux and Windows
+# Linux: uses LLD (LLVM Linker) if available
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+# Windows: uses LLD-LINK (LLVM Linker for MSVC)
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "linker=lld-link"]

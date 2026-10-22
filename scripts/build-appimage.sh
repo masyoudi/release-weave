@@ -87,9 +87,9 @@ else
     APPIMAGETOOL="$REPO_ROOT/target/tools/squashfs-root/AppRun"
 fi
 
-echo "==> Packaging AppImage with $APPIMAGETOOL (XZ compression)..."
+echo "==> Packaging AppImage with $APPIMAGETOOL (zstd compression)..."
 rm -f "$OUTPUT_IMAGE"
-ARCH=x86_64 "$APPIMAGETOOL" --comp xz -n "$APPDIR" "$OUTPUT_IMAGE"
+ARCH=x86_64 "$APPIMAGETOOL" --comp zstd -n "$APPDIR" "$OUTPUT_IMAGE"
 
 echo "==> AppImage created successfully:"
 ls -lh "$OUTPUT_IMAGE"
